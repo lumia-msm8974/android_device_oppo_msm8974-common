@@ -1340,6 +1340,30 @@ int QCamera2HardwareInterface::closeCamera()
     return rc;
 }
 
+#ifdef LUMIA_KARMA_CAMERA
+/* Lumia 930/1520 rear module: sensor modes 4992x3744 (4:3, Windows still) and
+ * 2688x1872 binned. The largest picture must share its aspect ratio with a
+ * preview size, or the camera2 legacy layer falls back to 4096x2160 and
+ * crops a third of the sensor height away. */
+static cam_dimension_t new_pic_sizes_cam0[] = {
+    {4992, 3744},
+    {4992, 2808},
+    {4160, 3120},
+    {4000, 3000},
+    {3264, 2448},
+    {3072, 1728},
+    {2592, 1944},
+    {2048, 1536},
+    {1920, 1080},
+    {1600, 1200},
+    {1280, 960},
+    {1280, 720},
+    {1024, 768},
+    {800, 600},
+    {640, 480},
+    {320, 240}
+};
+#else
 static cam_dimension_t new_pic_sizes_cam0[] = {
     {4208, 3120},
     {4160, 3120},
@@ -1361,6 +1385,7 @@ static cam_dimension_t new_pic_sizes_cam0[] = {
     {640, 480},
     {320, 240}
 };
+#endif
 
 static cam_dimension_t new_vid_sizes_cam0[] = {
     {4096, 2160},
@@ -1378,6 +1403,9 @@ static cam_dimension_t new_prvw_sizes_cam0[] = {
     {4096, 2160},
     {3840, 2160},
     {2560, 1440},
+#ifdef LUMIA_KARMA_CAMERA
+    {1920, 1440},
+#endif
     {1920, 1080},
     {1440, 1080},
     {1280, 720},
