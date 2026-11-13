@@ -1165,6 +1165,12 @@ int QCamera2HardwareInterface::openCamera()
         ALOGE("Failure: Camera already opened");
         return ALREADY_EXISTS;
     }
+#ifdef LUMIA_KARMA_CAMERA
+    /* The rear 4992-pixel mode needs both VFEs; with them forced, the
+     * 1408-pixel front mode fails to split. The daemon reads this property
+     * when the session starts, so set it for the camera being opened. */
+    property_set("persist.camera.isp.dualisp", mCameraId == 0 ? "1" : "0");
+#endif
     mCameraHandle = camera_open(mCameraId);
     if (!mCameraHandle) {
         ALOGE("camera_open failed.");
@@ -1415,13 +1421,16 @@ static cam_dimension_t new_prvw_sizes_cam0[] = {
 };
 
 #ifdef LUMIA_KARMA_CAMERA
-/* Lumia 930/1520 front module: sensor modes 1408x960, 1280x960 (4:3) and
- * 1408x792 (16:9), 1.2 MP. Nothing larger than the sensor, and the largest
- * picture is 4:3 like a preview size (see new_pic_sizes_cam0). */
+/* Lumia 930/1520 front module: it streams at most 796 rows, so the sensor
+ * modes are 1408x792 (16:9), 1056x792 (4:3) and 1280x720. Nothing larger
+ * than the sensor; the largest picture is 16:9 like the 1280x720 preview
+ * (see new_pic_sizes_cam0). */
 static cam_dimension_t new_pic_sizes_cam1[] = {
-    {1280, 960},
+    {1408, 792},
     {1280, 720},
-    {1024, 768},
+    {1056, 792},
+    {1024, 576},
+    {960, 720},
     {800, 600},
     {640, 480},
     {320, 240}
@@ -1435,8 +1444,8 @@ static cam_dimension_t new_vid_sizes_cam1[] = {
 };
 
 static cam_dimension_t new_prvw_sizes_cam1[] = {
-    {1280, 960},
     {1280, 720},
+    {1056, 792},
     {960, 720},
     {800, 600},
     {720, 480},
