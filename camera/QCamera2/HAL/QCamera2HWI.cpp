@@ -1414,6 +1414,36 @@ static cam_dimension_t new_prvw_sizes_cam0[] = {
     {320, 240}
 };
 
+#ifdef LUMIA_KARMA_CAMERA
+/* Lumia 930/1520 front module: sensor modes 1408x960, 1280x960 (4:3) and
+ * 1408x792 (16:9), 1.2 MP. Nothing larger than the sensor, and the largest
+ * picture is 4:3 like a preview size (see new_pic_sizes_cam0). */
+static cam_dimension_t new_pic_sizes_cam1[] = {
+    {1280, 960},
+    {1280, 720},
+    {1024, 768},
+    {800, 600},
+    {640, 480},
+    {320, 240}
+};
+
+static cam_dimension_t new_vid_sizes_cam1[] = {
+    {1280, 720},
+    {720, 480},
+    {640, 480},
+    {320, 240}
+};
+
+static cam_dimension_t new_prvw_sizes_cam1[] = {
+    {1280, 960},
+    {1280, 720},
+    {960, 720},
+    {800, 600},
+    {720, 480},
+    {640, 480},
+    {320, 240}
+};
+#else
 static cam_dimension_t new_vid_sizes_cam1[] = {
     {2560, 1440},
     {1920, 1080},
@@ -1435,6 +1465,7 @@ static cam_dimension_t new_prvw_sizes_cam1[] = {
     {576, 432},
     {320, 240}
 };
+#endif
 
 #define DATA_PTR(MEM_OBJ,INDEX) MEM_OBJ->getPtr( INDEX )
 
@@ -1524,6 +1555,12 @@ int QCamera2HardwareInterface::initCapabilities(int cameraId,mm_camera_vtbl_t *c
                                         gCamCapability[cameraId]->hfr_tbl[CAM_HFR_MODE_60FPS].livesnapshot_sizes_tbl[i];
         gCamCapability[cameraId]->hfr_tbl_cnt = 3;
     } else if (gCamCapability[cameraId]->position == CAM_POSITION_FRONT) {
+#ifdef LUMIA_KARMA_CAMERA
+        for (i = 0; i < ARRAY_SIZE(new_pic_sizes_cam1); i++)
+            gCamCapability[cameraId]->picture_sizes_tbl[i] = new_pic_sizes_cam1[i];
+        gCamCapability[cameraId]->picture_sizes_tbl_cnt = ARRAY_SIZE(new_pic_sizes_cam1);
+
+#endif
         for (i = 0; i < ARRAY_SIZE(new_vid_sizes_cam1); i++)
             gCamCapability[cameraId]->video_sizes_tbl[i] = new_vid_sizes_cam1[i];
         gCamCapability[cameraId]->video_sizes_tbl_cnt = ARRAY_SIZE(new_vid_sizes_cam1);
