@@ -1,3 +1,3 @@
-ifneq ($(filter bacon find7 martini,$(TARGET_DEVICE)),)
+ifneq ($(filter bacon find7 martini bandit,$(TARGET_DEVICE)),)
 include $(call all-subdir-makefiles)
 endif
