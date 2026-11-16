@@ -279,6 +279,13 @@ PRODUCT_PACKAGES += \
     wpa_supplicant_overlay.conf \
     p2p_supplicant_overlay.conf
 
+# Dexpreopt: system apps opened often, compiled in full instead of
+# speed-profile (on top of the defaults, SystemUI and the launcher)
+PRODUCT_DEXPREOPT_SPEED_APPS += \
+    Settings \
+    Dialer \
+    TeleService
+
 # Call the proprietary setup
 $(call inherit-product, vendor/oppo/msm8974-common/msm8974-common-vendor.mk)
 
