@@ -44,6 +44,10 @@ persist.hwc.mdpcomp.enable=true
 # UI thread and RenderThread of the top app in SCHED_FIFO (four identical
 # Krait cores; root cpuctl group with 950 ms of RT time per second)
 sys.use_fifo_ui=1
+# No fading edges on a marquee while it scrolls (frameworks/base TextView): each
+# edge makes the Adreno 330 store and reload the whole framebuffer in the
+# middle of the frame. With four of them the quick settings expand at 50 fps.
+ro.config.marquee_fade_scrolling=false
 ro.opengles.version=196608
 
 # Media
