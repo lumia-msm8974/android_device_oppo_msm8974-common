@@ -48,6 +48,10 @@ sys.use_fifo_ui=1
 # edge makes the Adreno 330 store and reload the whole framebuffer in the
 # middle of the frame. With four of them the quick settings expand at 50 fps.
 ro.config.marquee_fade_scrolling=false
+# Cached process limit of ActivityManager (frameworks/base patch): with the
+# default of 32 (16 with activities) the count kills background apps long
+# before the 2 GB of RAM are used; the low memory killer decides instead.
+ro.config.max_cached_processes=64
 ro.opengles.version=196608
 
 # Media
