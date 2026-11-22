@@ -279,26 +279,6 @@ PRODUCT_PACKAGES += \
     wpa_supplicant_overlay.conf \
     p2p_supplicant_overlay.conf
 
-# Dexpreopt: system apps opened often, compiled in full instead of
-# speed-profile (on top of the defaults, SystemUI and the launcher). Without
-# a profile at build time these apps otherwise run interpreted until the
-# background dexopt has seen them used. Measured on the Lumia 930 against
-# speed-profile with a real profile (cold start): Calculator 384 -> 299 ms,
-# Clock 641 -> 540, Contacts 465 -> 408, Messaging 422 -> 380, Calendar
-# 476 -> 443, Jelly 769 -> 723, Recorder 290 -> 269. Not the large ones:
-# Files and Music start faster with their profile.
-PRODUCT_DEXPREOPT_SPEED_APPS += \
-    Settings \
-    Dialer \
-    TeleService \
-    Contacts \
-    DeskClock \
-    Etar \
-    ExactCalculator \
-    Jelly \
-    messaging \
-    Recorder
-
 # Call the proprietary setup
 $(call inherit-product, vendor/oppo/msm8974-common/msm8974-common-vendor.mk)
 
