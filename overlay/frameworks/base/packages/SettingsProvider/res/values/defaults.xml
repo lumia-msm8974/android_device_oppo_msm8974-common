@@ -23,4 +23,11 @@
     <bool name="def_screen_brightness_automatic_mode">true</bool>
     <!-- Default screen brightness, from 0 to 255. 87 is 34%. -->
     <integer name="def_screen_brightness">87</integer>
+    <!-- Window, transition and animator scales at 0.5x. An app that is still
+         in memory comes back in 110 to 250 ms on these phones: at 1x the
+         animation is what the user waits for. The animator default needs the
+         frameworks/base patch that adds def_animator_duration_scale. -->
+    <fraction name="def_window_animation_scale">50%</fraction>
+    <fraction name="def_window_transition_scale">50%</fraction>
+    <fraction name="def_animator_duration_scale">50%</fraction>
 </resources>
