@@ -1551,6 +1551,20 @@ int QCamera2HardwareInterface::initCapabilities(int cameraId,mm_camera_vtbl_t *c
             gCamCapability[cameraId]->preview_sizes_tbl[i] = new_prvw_sizes_cam0[i];
         gCamCapability[cameraId]->preview_sizes_tbl_cnt = ARRAY_SIZE(new_prvw_sizes_cam0);
 
+#ifdef LUMIA_KARMA_CAMERA
+        /* With the 60 frames/s mode the daemon lowers the wide range: keep the
+         * list apps had. 60 stays out of it because apps pick the highest range
+         * for normal video; it is reachable by asking for it (QCameraParameters). */
+        for (i = 0; i < gCamCapability[cameraId]->hfr_tbl_cnt; i++) {
+            if (gCamCapability[cameraId]->hfr_tbl[i].mode == CAM_HFR_MODE_60FPS &&
+                gCamCapability[cameraId]->hfr_tbl[i].dim.width >= 1920 &&
+                gCamCapability[cameraId]->hfr_tbl[i].dim.height >= 1080) {
+                gCamCapability[cameraId]->fps_ranges_tbl[0].max_fps = 31.5f;
+                gCamCapability[cameraId]->fps_ranges_tbl[0].video_max_fps = 31.5f;
+                break;
+            }
+        }
+#endif
         // Add 90FPS HFR mode up to 720p
         x = CAM_HFR_MODE_90FPS;
         gCamCapability[cameraId]->hfr_tbl[x].mode = (cam_hfr_mode_t)x;

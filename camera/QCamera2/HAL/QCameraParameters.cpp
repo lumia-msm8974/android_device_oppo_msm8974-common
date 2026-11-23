@@ -1611,6 +1611,19 @@ int32_t QCameraParameters::setAutoExposure(const QCameraParameters& params)
     return NO_ERROR;
 }
 
+#ifdef LUMIA_KARMA_CAMERA
+// True when the sensor library offers 60 frames/s at 1080p.
+static bool lumiaHas1080p60(const cam_capability_t *cap)
+{
+    for (int i = 0; i < cap->hfr_tbl_cnt; i++) {
+        if (cap->hfr_tbl[i].mode == CAM_HFR_MODE_60FPS &&
+            cap->hfr_tbl[i].dim.width >= 1920 && cap->hfr_tbl[i].dim.height >= 1080)
+            return true;
+    }
+    return false;
+}
+#endif
+
 /*===========================================================================
  * FUNCTION   : setPreviewFpsRange
  *
@@ -1633,6 +1646,24 @@ int32_t QCameraParameters::setPreviewFpsRange(const QCameraParameters& params)
     CameraParameters::getPreviewFpsRange(&prevMinFps, &prevMaxFps);
     params.getPreviewFpsRange(&minFps, &maxFps);
 
+#ifdef LUMIA_KARMA_CAMERA
+    /* The backend picks a sensor mode when its maximum rate + 1 reaches the
+     * requested rate. The 4K crop mode declares 28.99 (it really runs at 30), so
+     * photos, which ask for 30, keep the full sensor modes, and 4K video asks
+     * for 29.9 to select the crop. */
+    bool lumia4kVideo = false;
+    {
+        int videoWidth = 0, videoHeight = 0;
+        const char *hint = params.get(KEY_RECORDING_HINT);
+        params.getVideoSize(&videoWidth, &videoHeight);
+        lumia4kVideo = hint != NULL && !strcmp(hint, VALUE_TRUE) && videoWidth > 2688;
+    }
+    if (lumia4kVideo && maxFps > 29900) {
+        maxFps = 29900;
+        if (minFps > maxFps)
+            minFps = maxFps;
+    }
+#endif
     ALOGE("%s: FpsRange Values:(%d, %d)", __func__, prevMinFps, prevMaxFps);
     ALOGE("%s: Requested FpsRange Values:(%d, %d)", __func__, minFps, maxFps);
 
@@ -1659,8 +1690,26 @@ int32_t QCameraParameters::setPreviewFpsRange(const QCameraParameters& params)
             goto end;
         }
     }
+#ifdef LUMIA_KARMA_CAMERA
+    if (lumia4kVideo && maxFps > 29900) {
+        maxFps = 29900;
+        if (minFps > maxFps)
+            minFps = maxFps;
+    }
+#endif
 
 
+#ifdef LUMIA_KARMA_CAMERA
+    /* 60 is not in the public list. Preview stays at 30, but the app must read
+     * back the range it set: MediaRecorder sends these parameters again and 30
+     * would end HFR. */
+    if (minFps == 60000 && maxFps == 60000 && mHfrMode == CAM_HFR_MODE_60FPS) {
+        setPreviewFpsRange(minFps, maxFps, 60000, 60000);
+        updateParamEntry(KEY_PREVIEW_FPS_RANGE, "60000,60000");
+        rc = NO_ERROR;
+        goto end;
+    }
+#endif
     for(int i = 0; i < m_pCapability->fps_ranges_tbl_cnt; i++) {
         // if the value is in the supported list
         if(minFps >= m_pCapability->fps_ranges_tbl[i].min_fps * 1000 &&
@@ -1750,6 +1799,18 @@ bool QCameraParameters::UpdateHFRFrameRate(const QCameraParameters& params)
                                hsrStr);
         if(NAME_NOT_FOUND != hfrMode) newHfrMode = hfrMode;
     }
+#ifdef LUMIA_KARMA_CAMERA
+    // Apps ask for 60 frames/s with a fixed range: that is the sensor's HFR mode.
+    if (newHfrMode == CAM_HFR_MODE_OFF && parm_minfps == 60000 && parm_maxfps == 60000) {
+        int videoWidth = 0, videoHeight = 0;
+        const char *hint = params.get(KEY_RECORDING_HINT);
+        params.getVideoSize(&videoWidth, &videoHeight);
+        if (hint != NULL && !strcmp(hint, VALUE_TRUE) && lumiaHas1080p60(m_pCapability) &&
+            videoWidth > 0 && videoWidth <= 1920 && videoHeight <= 1080) {
+            newHfrMode = CAM_HFR_MODE_60FPS;
+        }
+    }
+#endif
     ALOGE("%s: prevHfrMode - %d, currentHfrMode = %d ",
                __func__, mHfrMode, newHfrMode);
 
@@ -4132,6 +4193,11 @@ int32_t QCameraParameters::initDefaultParameters()
 
         // Set legacy preview fps
         String8 fpsValues = createFpsString(m_pCapability->fps_ranges_tbl[default_fps_index]);
+#ifdef LUMIA_KARMA_CAMERA
+        // MediaRecorder checks the requested rate against this list.
+        if (lumiaHas1080p60(m_pCapability))
+            fpsValues.append(",60");
+#endif
         set(KEY_SUPPORTED_PREVIEW_FRAME_RATES, fpsValues.string());
         ALOGD("%s: supported fps rates: %s", __func__, fpsValues.string());
         CameraParameters::setPreviewFrameRate(int(m_pCapability->fps_ranges_tbl[default_fps_index].max_fps));
