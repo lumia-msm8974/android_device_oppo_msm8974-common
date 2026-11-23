@@ -1394,6 +1394,20 @@ int32_t QCameraParameters::setLiveSnapshotSize(const QCameraParameters& params)
             }
         }
     }
+
+    // A live snapshot larger than the video makes the backend leave the
+    // binned video mode of the sensor for its full resolution mode, which on
+    // the Lumia rear camera runs at 10.6 fps. Apps that keep a large picture
+    // size while recording (Open Camera) then record at that rate.
+    int videoWidth = 0, videoHeight = 0;
+    params.getVideoSize(&videoWidth, &videoHeight);
+    if (videoWidth > 0 && videoHeight > 0 &&
+        (m_LiveSnapshotSize.width > videoWidth ||
+         m_LiveSnapshotSize.height > videoHeight)) {
+        m_LiveSnapshotSize.width = videoWidth;
+        m_LiveSnapshotSize.height = videoHeight;
+    }
+
     ALOGI("%s: live snapshot size %d x %d", __func__,
           m_LiveSnapshotSize.width, m_LiveSnapshotSize.height);
 
