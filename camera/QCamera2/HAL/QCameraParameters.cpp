@@ -1801,14 +1801,11 @@ bool QCameraParameters::UpdateHFRFrameRate(const QCameraParameters& params)
     }
 #ifdef LUMIA_KARMA_CAMERA
     // Apps ask for 60 frames/s with a fixed range: that is the sensor's HFR mode.
-    if (newHfrMode == CAM_HFR_MODE_OFF && parm_minfps == 60000 && parm_maxfps == 60000) {
-        int videoWidth = 0, videoHeight = 0;
-        const char *hint = params.get(KEY_RECORDING_HINT);
-        params.getVideoSize(&videoWidth, &videoHeight);
-        if (hint != NULL && !strcmp(hint, VALUE_TRUE) && lumiaHas1080p60(m_pCapability) &&
-            videoWidth > 0 && videoWidth <= 1920 && videoHeight <= 1080) {
-            newHfrMode = CAM_HFR_MODE_60FPS;
-        }
+    // Video size and recording hint are not checked: some apps set them later,
+    // and this range is not in the public list, so only video modes ask for it.
+    if (newHfrMode == CAM_HFR_MODE_OFF && parm_minfps == 60000 && parm_maxfps == 60000 &&
+        lumiaHas1080p60(m_pCapability)) {
+        newHfrMode = CAM_HFR_MODE_60FPS;
     }
 #endif
     ALOGE("%s: prevHfrMode - %d, currentHfrMode = %d ",
