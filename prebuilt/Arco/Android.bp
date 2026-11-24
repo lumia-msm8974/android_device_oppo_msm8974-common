@@ -1,5 +1,5 @@
-// Arco 0.5.1 (github.com/giannoccarol/cityman-camera, release v0.5.1,
-// sha256 676ed2709f2bb5064aba0e9b5cf9d8ceccdaf9c7850e3ee7e134d7eb223ea115).
+// Arco 0.5.2 (github.com/giannoccarol/cityman-camera, release v0.5.2,
+// sha256 2a9b94bcc549aaeeade5a9c0d753642ee1c92996ba80dbc89e4f4037721fd050).
 // Kept with its own signature, so later releases install over it as updates.
 android_app_import {
     name: "Arco",
