@@ -67,6 +67,10 @@ PRODUCT_PACKAGES += \
     camera.device@1.0-impl \
     Snap
 
+# Arco camera app (prebuilt release, updatable)
+PRODUCT_PACKAGES += \
+    Arco
+
 # Charger
 PRODUCT_PACKAGES += \
     charger_res_images
