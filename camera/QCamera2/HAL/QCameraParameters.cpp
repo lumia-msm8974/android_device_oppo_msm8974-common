@@ -1663,6 +1663,15 @@ int32_t QCameraParameters::setPreviewFpsRange(const QCameraParameters& params)
         if (minFps > maxFps)
             minFps = maxFps;
     }
+    /* The fixed 60 is listed for video: without the recording hint (photo
+     * preview, an app that takes the highest listed range) use the wide range. */
+    if (minFps == 60000 && maxFps == 60000 && lumiaHas1080p60(m_pCapability)) {
+        const char *hint = params.get(KEY_RECORDING_HINT);
+        if (hint == NULL || strcmp(hint, VALUE_TRUE)) {
+            minFps = (int)(m_pCapability->fps_ranges_tbl[0].min_fps * 1000);
+            maxFps = 30000;
+        }
+    }
 #endif
     ALOGE("%s: FpsRange Values:(%d, %d)", __func__, prevMinFps, prevMaxFps);
     ALOGE("%s: Requested FpsRange Values:(%d, %d)", __func__, minFps, maxFps);
@@ -1700,10 +1709,11 @@ int32_t QCameraParameters::setPreviewFpsRange(const QCameraParameters& params)
 
 
 #ifdef LUMIA_KARMA_CAMERA
-    /* 60 is not in the public list. Preview stays at 30, but the app must read
-     * back the range it set: MediaRecorder sends these parameters again and 30
-     * would end HFR. */
-    if (minFps == 60000 && maxFps == 60000 && mHfrMode == CAM_HFR_MODE_60FPS) {
+    /* A fixed 60 makes the backend pick the 60 frames/s sensor mode and runs
+     * the normal video path, with the CPP noise filters. The app must read
+     * back the range it set, because MediaRecorder sends these parameters
+     * again. */
+    if (minFps == 60000 && maxFps == 60000 && lumiaHas1080p60(m_pCapability)) {
         setPreviewFpsRange(minFps, maxFps, 60000, 60000);
         updateParamEntry(KEY_PREVIEW_FPS_RANGE, "60000,60000");
         rc = NO_ERROR;
@@ -1800,12 +1810,16 @@ bool QCameraParameters::UpdateHFRFrameRate(const QCameraParameters& params)
         if(NAME_NOT_FOUND != hfrMode) newHfrMode = hfrMode;
     }
 #ifdef LUMIA_KARMA_CAMERA
-    // Apps ask for 60 frames/s with a fixed range: that is the sensor's HFR mode.
-    // Video size and recording hint are not checked: some apps set them later,
-    // and this range is not in the public list, so only video modes ask for it.
+    // A fixed 60 frames/s range used to select HFR. HFR skips the CPP noise
+    // filters (chroma noise about ten times higher, green speckles), so it
+    // now runs the normal video path; persist.vendor.camera.lumia_60_hfr=1
+    // brings the old behaviour back for comparison.
     if (newHfrMode == CAM_HFR_MODE_OFF && parm_minfps == 60000 && parm_maxfps == 60000 &&
         lumiaHas1080p60(m_pCapability)) {
-        newHfrMode = CAM_HFR_MODE_60FPS;
+        char prop[PROPERTY_VALUE_MAX];
+        property_get("persist.vendor.camera.lumia_60_hfr", prop, "0");
+        if (atoi(prop) == 1)
+            newHfrMode = CAM_HFR_MODE_60FPS;
     }
 #endif
     ALOGE("%s: prevHfrMode - %d, currentHfrMode = %d ",
@@ -4177,6 +4191,13 @@ int32_t QCameraParameters::initDefaultParameters()
         String8 fpsRangeValues = createFpsRangeString(m_pCapability->fps_ranges_tbl,
                                                       m_pCapability->fps_ranges_tbl_cnt,
                                                       default_fps_index);
+#ifdef LUMIA_KARMA_CAMERA
+        /* Listed for video only (setPreviewFpsRange() turns it into the usual
+         * range without the recording hint): Android's LEGACY camera2 layer
+         * drops any range that is not in this list. */
+        if (lumiaHas1080p60(m_pCapability))
+            fpsRangeValues.append(",(60000,60000)");
+#endif
         set(KEY_SUPPORTED_PREVIEW_FPS_RANGE, fpsRangeValues.string());
         ALOGD("%s: supported fps ranges: %s", __func__, fpsRangeValues.string());
 
@@ -4877,7 +4898,15 @@ int32_t QCameraParameters::setPreviewFpsRange(int min_fps,
                 __func__, min_fps, max_fps, vid_min_fps, vid_max_fps);
 
     /* Cap preview frame rate to 30 FPS */
+#ifdef LUMIA_KARMA_CAMERA
+    /* except the fixed 60 of the Lumia 1080p60 video, which runs on the normal
+     * video path: there the backend takes the sensor rate from the preview */
+    if (max_fps > 30000 &&
+        !(min_fps == 60000 && max_fps == 60000 && mHfrMode == CAM_HFR_MODE_OFF &&
+          lumiaHas1080p60(m_pCapability))) {
+#else
     if (max_fps > 30000) {
+#endif
         max_fps = 30000;
         if (min_fps > 30000)
             min_fps = 30000;
