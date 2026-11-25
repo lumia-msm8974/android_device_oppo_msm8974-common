@@ -1653,10 +1653,14 @@ int32_t QCameraParameters::setPreviewFpsRange(const QCameraParameters& params)
      * for 29.9 to select the crop. */
     bool lumia4kVideo = false;
     {
-        int videoWidth = 0, videoHeight = 0;
+        int videoWidth = 0, videoHeight = 0, previewWidth = 0, previewHeight = 0;
         const char *hint = params.get(KEY_RECORDING_HINT);
         params.getVideoSize(&videoWidth, &videoHeight);
-        lumia4kVideo = hint != NULL && !strcmp(hint, VALUE_TRUE) && videoWidth > 2688;
+        params.getPreviewSize(&previewWidth, &previewHeight);
+        /* Android's LEGACY camera2 layer records from the preview stream and
+         * never sets the video size, so a 4K preview with the hint counts too */
+        lumia4kVideo = hint != NULL && !strcmp(hint, VALUE_TRUE) &&
+                (videoWidth > 2688 || (previewWidth > 2688 && previewWidth * 9 == previewHeight * 16));
     }
     if (lumia4kVideo && maxFps > 29900) {
         maxFps = 29900;

@@ -1406,6 +1406,12 @@ static cam_dimension_t new_vid_sizes_cam0[] = {
 };
 
 static cam_dimension_t new_prvw_sizes_cam0[] = {
+#ifdef LUMIA_KARMA_CAMERA
+    /* Android's LEGACY camera2 layer drops every preview size larger than the
+     * largest one with the aspect ratio of the largest JPEG (4:3): without a
+     * 4:3 size above 4096x2160 the 4K sizes never reach camera2 apps. */
+    {3840, 2880},
+#endif
     {4096, 2160},
     {3840, 2160},
     {2560, 1440},
